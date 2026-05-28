@@ -1,10 +1,10 @@
 import { StyleSheet, Text, View } from "react-native";
 
-export default function ProgressScreen() {
+export default function ProfileScreen() {
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Progress</Text>
-      <Text>Weekly reward cycle will go here.</Text>
+      <Text style={styles.title}>Profile</Text>
+      <Text>Child settings will go here.</Text>
     </View>
   );
 }
