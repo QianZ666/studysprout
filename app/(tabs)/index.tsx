@@ -1,5 +1,6 @@
 import TaskCard from "@/components/TaskCard";
 import { getChildren } from "@/services/childService";
+import { getTaskTemplates } from "@/services/taskTemplateService";
 import { styles } from "@/styles/home.styles";
 import { Child } from "@/types/Child";
 import { useEffect, useState } from "react";
@@ -18,12 +19,7 @@ export default function HomeScreen() {
   const [children, setChildren] = useState<Child[]>([]);
   const [selectedChild, setSelectedChild] = useState<Child | null>(null);
 
-  const taskLibrary = [
-    { id: "1", title: "IXL Math" },
-    { id: "2", title: "IXL English" },
-    { id: "3", title: "Reading A-Z" },
-    { id: "4", title: "Learning Chinese" },
-  ];
+  const [taskLibrary, setTaskLibrary] = useState<any[]>([]);
 
   const toggleTask = (id: string) => {
     setTasks((prevTasks) =>
@@ -72,6 +68,17 @@ export default function HomeScreen() {
     };
 
     loadChildren();
+  }, []);
+  useEffect(() => {
+    const loadTaskTemplates = async () => {
+      const templates = await getTaskTemplates();
+
+      console.log("templates:", templates);
+
+      setTaskLibrary(templates);
+    };
+
+    loadTaskTemplates();
   }, []);
 
   return (
