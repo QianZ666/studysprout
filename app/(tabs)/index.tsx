@@ -1,6 +1,8 @@
 import TaskCard from "@/components/TaskCard";
+import { getChildren } from "@/services/childService";
 import { styles } from "@/styles/home.styles";
-import { useState } from "react";
+import { Child } from "@/types/Child";
+import { useEffect, useState } from "react";
 import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 
 export default function HomeScreen() {
@@ -13,6 +15,8 @@ export default function HomeScreen() {
   const [newTaskTitle, setNewTaskTitle] = useState("");
   const [showLibrary, setShowLibrary] = useState(false);
   const [showAddTask, setShowAddTask] = useState(false);
+  const [children, setChildren] = useState<Child[]>([]);
+  const [selectedChild, setSelectedChild] = useState<Child | null>(null);
 
   const taskLibrary = [
     { id: "1", title: "IXL Math" },
@@ -56,11 +60,26 @@ export default function HomeScreen() {
 
     setShowLibrary(false);
   };
+  useEffect(() => {
+    const loadChildren = async () => {
+      const childrenData = await getChildren();
+
+      setChildren(childrenData as Child[]);
+
+      if (childrenData.length > 0) {
+        setSelectedChild(childrenData[0] as Child);
+      }
+    };
+
+    loadChildren();
+  }, []);
 
   return (
     <View style={styles.container}>
       <View style={styles.childSwitcher}>
-        <Text style={styles.childName}>👧Yuancheng ▼</Text>
+        <Text style={styles.childName}>
+          {selectedChild?.name || "No child"} ▼
+        </Text>
       </View>
 
       <Text style={styles.title}>Today's Tasks</Text>
