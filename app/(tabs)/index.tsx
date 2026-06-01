@@ -72,15 +72,14 @@ export default function HomeScreen() {
   }, []);
   useEffect(() => {
     const loadTaskTemplates = async () => {
-      const templates = await getTaskTemplates();
+      if (!selectedChild?.id) return;
 
-      console.log("templates:", templates);
-
+      const templates = await getTaskTemplates(selectedChild.id);
       setTaskLibrary(templates);
     };
 
     loadTaskTemplates();
-  }, []);
+  }, [selectedChild]);
 
   return (
     <View style={styles.container}>

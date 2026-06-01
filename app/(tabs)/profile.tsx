@@ -13,23 +13,38 @@ import { createTaskTemplate } from "@/services/taskTemplateService";
 import { Child } from "@/types/Child";
 
 export default function ProfileScreen() {
+  // Child form state
   const [name, setName] = useState("");
   const [dailyGoal, setDailyGoal] = useState("5");
   const [reward, setReward] = useState("$5");
   const [rewardCycleDays, setRewardCycleDays] = useState("7");
+  const [selectedChild, setSelectedChild] = useState<Child | null>(null);
+
+  // Long-term task form state
   const [taskTitle, setTaskTitle] = useState("");
+
+  // Children list state
   const [children, setChildren] = useState<Child[]>([]);
   const [showAddChildForm, setShowAddChildForm] = useState(false);
 
+  // Load all children from Firestore
   const loadChildren = async () => {
     const childrenData = await getChildren();
-    setChildren(childrenData as Child[]);
+    const typedChildren = childrenData as Child[];
+
+    setChildren(typedChildren);
+
+    if (typedChildren.length > 0 && !selectedChild) {
+      setSelectedChild(typedChildren[0]);
+    }
   };
 
+  // Load children when Profile screen opens
   useEffect(() => {
     loadChildren();
   }, []);
 
+  // Create a new child profile
   const handleCreateChild = async () => {
     if (!name.trim()) {
       Alert.alert("Please enter child name");
@@ -46,23 +61,31 @@ export default function ProfileScreen() {
 
     Alert.alert("Child created");
 
+    // Refresh children list after saving
     await loadChildren();
-    setShowAddChildForm(false);
 
+    // Hide form and reset fields
+    setShowAddChildForm(false);
     setName("");
     setDailyGoal("5");
     setReward("$5");
     setRewardCycleDays("7");
   };
 
+  // Create a long-term task template
   const handleCreateTaskTemplate = async () => {
+    if (!selectedChild?.id) {
+      Alert.alert("Please select a child first");
+      return;
+    }
+
     if (!taskTitle.trim()) {
       Alert.alert("Please enter task name");
       return;
     }
 
     await createTaskTemplate({
-      childId: "TEMP_CHILD_ID",
+      childId: selectedChild.id,
       title: taskTitle.trim(),
       createdAt: new Date(),
     });
@@ -73,29 +96,24 @@ export default function ProfileScreen() {
 
   return (
     <ScrollView
-      style={{ flex: 1, backgroundColor: "#F8FAF8" }}
+      style={{
+        flex: 1,
+        backgroundColor: "#F8FAF8",
+      }}
       contentContainerStyle={{
         padding: 24,
-        paddingBottom: 80,
+        paddingBottom: 100,
       }}
     >
       <Text style={{ fontSize: 28, fontWeight: "700", marginTop: 60 }}>
         Profile
       </Text>
-      <Text style={{ fontSize: 20, fontWeight: "600", marginTop: 30 }}>
-        Children
-      </Text>
+
+      {/* Children list */}
+      <Text style={sectionTitleStyle}>Children</Text>
 
       {children.map((child) => (
-        <View
-          key={child.id}
-          style={{
-            backgroundColor: "#FFFFFF",
-            padding: 16,
-            borderRadius: 16,
-            marginTop: 12,
-          }}
-        >
+        <View key={child.id} style={cardStyle}>
           <Text style={{ fontSize: 18, fontWeight: "700" }}>{child.name}</Text>
           <Text>Goal: {child.dailyGoal} tasks/day</Text>
           <Text>Reward: {child.reward}</Text>
@@ -103,85 +121,106 @@ export default function ProfileScreen() {
         </View>
       ))}
 
+      {/* Toggle Add Child form */}
       <Pressable
         onPress={() => setShowAddChildForm(!showAddChildForm)}
-        style={{
-          backgroundColor: "#E8F0E8",
-          padding: 14,
-          borderRadius: 16,
-          marginTop: 20,
-          alignItems: "center",
-        }}
+        style={secondaryButtonStyle}
       >
-        <Text style={{ fontSize: 16, fontWeight: "700" }}>+ Add Child</Text>
+        <Text style={buttonTextStyle}>+ Add Child</Text>
       </Pressable>
 
+      {/* Add Child form */}
       {showAddChildForm && (
         <>
-          <Text
-            style={{
-              fontSize: 20,
-              fontWeight: "600",
-              marginTop: 30,
-            }}
-          >
-            Add Child
-          </Text>
+          <Text style={sectionTitleStyle}>Add Child</Text>
+
           <Text style={labelStyle}>Child Name</Text>
           <TextInput
-            placeholder="Child name"
+            placeholder="e.g. Emma"
             value={name}
             onChangeText={setName}
             style={inputStyle}
           />
+
           <Text style={labelStyle}>Daily Goal (tasks per day)</Text>
           <TextInput
-            placeholder="Daily goal"
+            placeholder="e.g. 5"
             value={dailyGoal}
             onChangeText={setDailyGoal}
             keyboardType="number-pad"
             style={inputStyle}
           />
+
           <Text style={labelStyle}>Reward</Text>
           <TextInput
-            placeholder="Reward"
+            placeholder="e.g. $5, Pokemon Cards, Movie Night"
             value={reward}
             onChangeText={setReward}
             style={inputStyle}
           />
+
           <Text style={labelStyle}>Reward Cycle (days)</Text>
           <TextInput
-            placeholder="Reward cycle days"
+            placeholder="e.g. 7"
             value={rewardCycleDays}
             onChangeText={setRewardCycleDays}
             keyboardType="number-pad"
             style={inputStyle}
           />
 
+          <Pressable onPress={handleCreateChild} style={primaryButtonStyle}>
+            <Text style={buttonTextStyle}>Save Child</Text>
+          </Pressable>
+        </>
+      )}
+
+      {/* Long-term task library */}
+      <Text style={sectionTitleStyle}>Long-term Task Library</Text>
+      <Text style={labelStyle}>Select Child</Text>
+
+      <View style={cardStyle}>
+        {children.map((child) => (
           <Pressable
-            onPress={handleCreateChild}
+            key={child.id}
+            onPress={() => setSelectedChild(child)}
             style={{
-              backgroundColor: "#CFE3CF",
-              padding: 16,
-              borderRadius: 16,
-              marginTop: 20,
-              alignItems: "center",
+              paddingVertical: 10,
             }}
           >
             <Text
               style={{
                 fontSize: 16,
-                fontWeight: "700",
+                fontWeight: selectedChild?.id === child.id ? "700" : "400",
               }}
             >
-              Save Child
+              {selectedChild?.id === child.id ? "✅ " : ""}
+              {child.name}
             </Text>
           </Pressable>
-        </>
-      )}
+        ))}
+      </View>
+
+      <Text style={labelStyle}>Task Name</Text>
+      <TextInput
+        placeholder="e.g. IXL Math, Reading A-Z, Piano"
+        value={taskTitle}
+        onChangeText={setTaskTitle}
+        style={inputStyle}
+      />
+
+      <Pressable onPress={handleCreateTaskTemplate} style={primaryButtonStyle}>
+        <Text style={buttonTextStyle}>Save Task</Text>
+      </Pressable>
     </ScrollView>
   );
 }
+
+const sectionTitleStyle = {
+  fontSize: 20,
+  fontWeight: "600" as const,
+  marginTop: 30,
+};
+
 const labelStyle = {
   fontSize: 16,
   fontWeight: "600" as const,
@@ -194,5 +233,32 @@ const inputStyle = {
   padding: 14,
   borderRadius: 14,
   fontSize: 16,
-  marginTop: 14,
+};
+
+const cardStyle = {
+  backgroundColor: "#FFFFFF",
+  padding: 16,
+  borderRadius: 16,
+  marginTop: 12,
+};
+
+const primaryButtonStyle = {
+  backgroundColor: "#CFE3CF",
+  padding: 16,
+  borderRadius: 16,
+  marginTop: 20,
+  alignItems: "center" as const,
+};
+
+const secondaryButtonStyle = {
+  backgroundColor: "#E8F0E8",
+  padding: 14,
+  borderRadius: 16,
+  marginTop: 20,
+  alignItems: "center" as const,
+};
+
+const buttonTextStyle = {
+  fontSize: 16,
+  fontWeight: "700" as const,
 };
