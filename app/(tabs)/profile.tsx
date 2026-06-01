@@ -1,8 +1,16 @@
-import { useState } from "react";
-import { Alert, Pressable, Text, TextInput, View } from "react-native";
+import { useEffect, useState } from "react";
+import {
+  Alert,
+  Pressable,
+  ScrollView,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
 
-import { createChild } from "@/services/childService";
+import { createChild, getChildren } from "@/services/childService";
 import { createTaskTemplate } from "@/services/taskTemplateService";
+import { Child } from "@/types/Child";
 
 export default function ProfileScreen() {
   const [name, setName] = useState("");
@@ -10,6 +18,17 @@ export default function ProfileScreen() {
   const [reward, setReward] = useState("$5");
   const [rewardCycleDays, setRewardCycleDays] = useState("7");
   const [taskTitle, setTaskTitle] = useState("");
+  const [children, setChildren] = useState<Child[]>([]);
+  const [showAddChildForm, setShowAddChildForm] = useState(false);
+
+  const loadChildren = async () => {
+    const childrenData = await getChildren();
+    setChildren(childrenData as Child[]);
+  };
+
+  useEffect(() => {
+    loadChildren();
+  }, []);
 
   const handleCreateChild = async () => {
     if (!name.trim()) {
@@ -27,11 +46,15 @@ export default function ProfileScreen() {
 
     Alert.alert("Child created");
 
+    await loadChildren();
+    setShowAddChildForm(false);
+
     setName("");
     setDailyGoal("5");
     setReward("$5");
     setRewardCycleDays("7");
   };
+
   const handleCreateTaskTemplate = async () => {
     if (!taskTitle.trim()) {
       Alert.alert("Please enter task name");
@@ -49,83 +72,122 @@ export default function ProfileScreen() {
   };
 
   return (
-    <View style={{ flex: 1, padding: 24, backgroundColor: "#F8FAF8" }}>
+    <ScrollView
+      style={{ flex: 1, backgroundColor: "#F8FAF8" }}
+      contentContainerStyle={{
+        padding: 24,
+        paddingBottom: 80,
+      }}
+    >
       <Text style={{ fontSize: 28, fontWeight: "700", marginTop: 60 }}>
         Profile
       </Text>
-
       <Text style={{ fontSize: 20, fontWeight: "600", marginTop: 30 }}>
-        Add Child
+        Children
       </Text>
 
-      <TextInput
-        placeholder="Child name"
-        value={name}
-        onChangeText={setName}
-        style={inputStyle}
-      />
-
-      <TextInput
-        placeholder="Daily goal"
-        value={dailyGoal}
-        onChangeText={setDailyGoal}
-        keyboardType="number-pad"
-        style={inputStyle}
-      />
-
-      <TextInput
-        placeholder="Reward"
-        value={reward}
-        onChangeText={setReward}
-        style={inputStyle}
-      />
-
-      <TextInput
-        placeholder="Reward cycle days"
-        value={rewardCycleDays}
-        onChangeText={setRewardCycleDays}
-        keyboardType="number-pad"
-        style={inputStyle}
-      />
+      {children.map((child) => (
+        <View
+          key={child.id}
+          style={{
+            backgroundColor: "#FFFFFF",
+            padding: 16,
+            borderRadius: 16,
+            marginTop: 12,
+          }}
+        >
+          <Text style={{ fontSize: 18, fontWeight: "700" }}>{child.name}</Text>
+          <Text>Goal: {child.dailyGoal} tasks/day</Text>
+          <Text>Reward: {child.reward}</Text>
+          <Text>Cycle: {child.rewardCycleDays} days</Text>
+        </View>
+      ))}
 
       <Pressable
-        onPress={handleCreateChild}
+        onPress={() => setShowAddChildForm(!showAddChildForm)}
         style={{
-          backgroundColor: "#CFE3CF",
-          padding: 16,
+          backgroundColor: "#E8F0E8",
+          padding: 14,
           borderRadius: 16,
           marginTop: 20,
           alignItems: "center",
         }}
       >
-        <Text style={{ fontSize: 16, fontWeight: "700" }}>Save Child</Text>
+        <Text style={{ fontSize: 16, fontWeight: "700" }}>+ Add Child</Text>
       </Pressable>
-      <Text style={{ fontSize: 20, fontWeight: "600", marginTop: 40 }}>
-        Add Long-term Task
-      </Text>
 
-      <TextInput
-        placeholder="Task name, e.g. IXL Math"
-        value={taskTitle}
-        onChangeText={setTaskTitle}
-        style={inputStyle}
-      />
+      {showAddChildForm && (
+        <>
+          <Text
+            style={{
+              fontSize: 20,
+              fontWeight: "600",
+              marginTop: 30,
+            }}
+          >
+            Add Child
+          </Text>
+          <Text style={labelStyle}>Child Name</Text>
+          <TextInput
+            placeholder="Child name"
+            value={name}
+            onChangeText={setName}
+            style={inputStyle}
+          />
+          <Text style={labelStyle}>Daily Goal (tasks per day)</Text>
+          <TextInput
+            placeholder="Daily goal"
+            value={dailyGoal}
+            onChangeText={setDailyGoal}
+            keyboardType="number-pad"
+            style={inputStyle}
+          />
+          <Text style={labelStyle}>Reward</Text>
+          <TextInput
+            placeholder="Reward"
+            value={reward}
+            onChangeText={setReward}
+            style={inputStyle}
+          />
+          <Text style={labelStyle}>Reward Cycle (days)</Text>
+          <TextInput
+            placeholder="Reward cycle days"
+            value={rewardCycleDays}
+            onChangeText={setRewardCycleDays}
+            keyboardType="number-pad"
+            style={inputStyle}
+          />
 
-      <Pressable
-        onPress={handleCreateTaskTemplate}
-        style={{
-          backgroundColor: "#CFE3CF",
-          padding: 16,
-          borderRadius: 16,
-          marginTop: 20,
-          alignItems: "center",
-        }}
-      >
-        <Text style={{ fontSize: 16, fontWeight: "700" }}>Save Task</Text>
-      </Pressable>
-    </View>
+          <Pressable
+            onPress={handleCreateChild}
+            style={{
+              backgroundColor: "#CFE3CF",
+              padding: 16,
+              borderRadius: 16,
+              marginTop: 20,
+              alignItems: "center",
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 16,
+                fontWeight: "700",
+              }}
+            >
+              Save Child
+            </Text>
+          </Pressable>
+        </>
+      )}
+    </ScrollView>
   );
 }
+const labelStyle = {
+  fontSize: 16,
+  fontWeight: "600" as const,
+  marginTop: 16,
+  marginBottom: 6,
+};
 
 const inputStyle = {
   backgroundColor: "#FFFFFF",

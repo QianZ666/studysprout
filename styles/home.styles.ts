@@ -136,4 +136,25 @@ export const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "700",
   },
+  childDropdown: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    paddingVertical: 8,
+    marginTop: -24,
+    marginBottom: 24,
+    shadowColor: "#000",
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+
+  childDropdownItem: {
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+  },
+
+  childDropdownText: {
+    fontSize: 16,
+    fontWeight: "600",
+  },
 });

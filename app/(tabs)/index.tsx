@@ -20,6 +20,7 @@ export default function HomeScreen() {
   const [selectedChild, setSelectedChild] = useState<Child | null>(null);
 
   const [taskLibrary, setTaskLibrary] = useState<any[]>([]);
+  const [showChildDropdown, setShowChildDropdown] = useState(false);
 
   const toggleTask = (id: string) => {
     setTasks((prevTasks) =>
@@ -83,11 +84,30 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.childSwitcher}>
+      <Pressable
+        style={styles.childSwitcher}
+        onPress={() => setShowChildDropdown(!showChildDropdown)}
+      >
         <Text style={styles.childName}>
-          {selectedChild?.name || "No child"} ▼
+          👧 {selectedChild?.name || "No child"} ▼
         </Text>
-      </View>
+      </Pressable>
+      {showChildDropdown && (
+        <View style={styles.childDropdown}>
+          {children.map((child) => (
+            <Pressable
+              key={child.id}
+              style={styles.childDropdownItem}
+              onPress={() => {
+                setSelectedChild(child);
+                setShowChildDropdown(false);
+              }}
+            >
+              <Text style={styles.childDropdownText}>{child.name}</Text>
+            </Pressable>
+          ))}
+        </View>
+      )}
 
       <Text style={styles.title}>Today's Tasks</Text>
       <Text style={styles.subtitle}>
