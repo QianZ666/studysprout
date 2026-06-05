@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { router } from "expo-router";
+import { useEffect, useState } from "react";
 import {
   Alert,
   Pressable,
@@ -10,13 +11,17 @@ import {
 
 import { useCurrentChild } from "@/contexts/CurrentChildContext";
 import { createChild } from "@/services/childService";
-import { createTaskTemplate } from "@/services/taskTemplateService";
+import {
+  createTaskTemplate,
+  getTaskTemplates,
+} from "@/services/taskTemplateService";
 
 export default function ProfileScreen() {
   const { selectedChild, loadChildren } = useCurrentChild();
 
   // Add child form state
   const [showAddChildForm, setShowAddChildForm] = useState(false);
+  const [taskTemplates, setTaskTemplates] = useState<any[]>([]);
   const [name, setName] = useState("");
   const [dailyGoal, setDailyGoal] = useState("5");
   const [reward, setReward] = useState("$5");
@@ -50,6 +55,14 @@ export default function ProfileScreen() {
     setReward("$5");
     setRewardCycleDays("7");
   };
+  // Store long-term task templates for the current child
+  const loadTaskTemplates = async () => {
+    if (!selectedChild?.id) return;
+
+    const templates = await getTaskTemplates(selectedChild.id);
+
+    setTaskTemplates(templates);
+  };
 
   // Create a long-term task for the current selected child
   const handleCreateTaskTemplate = async () => {
@@ -69,9 +82,18 @@ export default function ProfileScreen() {
       createdAt: new Date(),
     });
 
-    Alert.alert("长期任务已创建");
+    // Refresh task library after creating a new task
+    await loadTaskTemplates();
+
+    Alert.alert("Long-term task created");
+
     setTaskTitle("");
   };
+
+  // Reload task templates whenever the selected child changes
+  useEffect(() => {
+    loadTaskTemplates();
+  }, [selectedChild]);
 
   return (
     <ScrollView
@@ -154,20 +176,41 @@ export default function ProfileScreen() {
         </>
       )}
 
-      {/* Long-term task library */}
-      <Text style={sectionTitleStyle}>Long-term Task Library</Text>
+      <View style={cardStyle}>
+        <Text
+          style={{
+            fontSize: 18,
+            fontWeight: "700",
+          }}
+        >
+          📚 Task Library
+        </Text>
 
-      <Text style={labelStyle}>Task Name</Text>
-      <TextInput
-        placeholder="e.g. IXL Math, Reading A-Z, Piano"
-        value={taskTitle}
-        onChangeText={setTaskTitle}
-        style={inputStyle}
-      />
+        <Text
+          style={{
+            marginTop: 8,
+            color: "#666",
+          }}
+        >
+          {taskTemplates.length} Tasks
+        </Text>
 
-      <Pressable onPress={handleCreateTaskTemplate} style={primaryButtonStyle}>
-        <Text style={buttonTextStyle}>Save Task</Text>
-      </Pressable>
+        <Pressable
+          onPress={() => router.push("/task-library")}
+          style={{
+            marginTop: 12,
+          }}
+        >
+          <Text
+            style={{
+              color: "#4A7C59",
+              fontWeight: "600",
+            }}
+          >
+            Manage →
+          </Text>
+        </Pressable>
+      </View>
     </ScrollView>
   );
 }
