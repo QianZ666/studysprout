@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   Alert,
   Pressable,
@@ -8,41 +8,22 @@ import {
   View,
 } from "react-native";
 
-import { createChild, getChildren } from "@/services/childService";
+import { useCurrentChild } from "@/contexts/CurrentChildContext";
+import { createChild } from "@/services/childService";
 import { createTaskTemplate } from "@/services/taskTemplateService";
-import { Child } from "@/types/Child";
 
 export default function ProfileScreen() {
-  // Child form state
+  const { selectedChild, loadChildren } = useCurrentChild();
+
+  // Add child form state
+  const [showAddChildForm, setShowAddChildForm] = useState(false);
   const [name, setName] = useState("");
   const [dailyGoal, setDailyGoal] = useState("5");
   const [reward, setReward] = useState("$5");
   const [rewardCycleDays, setRewardCycleDays] = useState("7");
-  const [selectedChild, setSelectedChild] = useState<Child | null>(null);
 
   // Long-term task form state
   const [taskTitle, setTaskTitle] = useState("");
-
-  // Children list state
-  const [children, setChildren] = useState<Child[]>([]);
-  const [showAddChildForm, setShowAddChildForm] = useState(false);
-
-  // Load all children from Firestore
-  const loadChildren = async () => {
-    const childrenData = await getChildren();
-    const typedChildren = childrenData as Child[];
-
-    setChildren(typedChildren);
-
-    if (typedChildren.length > 0 && !selectedChild) {
-      setSelectedChild(typedChildren[0]);
-    }
-  };
-
-  // Load children when Profile screen opens
-  useEffect(() => {
-    loadChildren();
-  }, []);
 
   // Create a new child profile
   const handleCreateChild = async () => {
@@ -61,10 +42,8 @@ export default function ProfileScreen() {
 
     Alert.alert("Child created");
 
-    // Refresh children list after saving
     await loadChildren();
 
-    // Hide form and reset fields
     setShowAddChildForm(false);
     setName("");
     setDailyGoal("5");
@@ -72,7 +51,7 @@ export default function ProfileScreen() {
     setRewardCycleDays("7");
   };
 
-  // Create a long-term task template
+  // Create a long-term task for the current selected child
   const handleCreateTaskTemplate = async () => {
     if (!selectedChild?.id) {
       Alert.alert("Please select a child first");
@@ -90,7 +69,7 @@ export default function ProfileScreen() {
       createdAt: new Date(),
     });
 
-    Alert.alert("Task template created");
+    Alert.alert("长期任务已创建");
     setTaskTitle("");
   };
 
@@ -109,17 +88,18 @@ export default function ProfileScreen() {
         Profile
       </Text>
 
-      {/* Children list */}
-      <Text style={sectionTitleStyle}>Children</Text>
+      {/* Current child information */}
+      <Text style={sectionTitleStyle}>Current Child</Text>
 
-      {children.map((child) => (
-        <View key={child.id} style={cardStyle}>
-          <Text style={{ fontSize: 18, fontWeight: "700" }}>{child.name}</Text>
-          <Text>Goal: {child.dailyGoal} tasks/day</Text>
-          <Text>Reward: {child.reward}</Text>
-          <Text>Cycle: {child.rewardCycleDays} days</Text>
-        </View>
-      ))}
+      <View style={cardStyle}>
+        <Text style={{ fontSize: 20, fontWeight: "700" }}>
+          {selectedChild?.name ?? "No Child Selected"}
+        </Text>
+
+        <Text>Goal: {selectedChild?.dailyGoal ?? "-"} tasks/day</Text>
+        <Text>Reward: {selectedChild?.reward ?? "-"}</Text>
+        <Text>Cycle: {selectedChild?.rewardCycleDays ?? "-"} days</Text>
+      </View>
 
       {/* Toggle Add Child form */}
       <Pressable
@@ -176,29 +156,6 @@ export default function ProfileScreen() {
 
       {/* Long-term task library */}
       <Text style={sectionTitleStyle}>Long-term Task Library</Text>
-      <Text style={labelStyle}>Select Child</Text>
-
-      <View style={cardStyle}>
-        {children.map((child) => (
-          <Pressable
-            key={child.id}
-            onPress={() => setSelectedChild(child)}
-            style={{
-              paddingVertical: 10,
-            }}
-          >
-            <Text
-              style={{
-                fontSize: 16,
-                fontWeight: selectedChild?.id === child.id ? "700" : "400",
-              }}
-            >
-              {selectedChild?.id === child.id ? "✅ " : ""}
-              {child.name}
-            </Text>
-          </Pressable>
-        ))}
-      </View>
 
       <Text style={labelStyle}>Task Name</Text>
       <TextInput

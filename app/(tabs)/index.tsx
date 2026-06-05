@@ -1,11 +1,10 @@
 import TaskCard from "@/components/TaskCard";
-import { getChildren } from "@/services/childService";
+import { useCurrentChild } from "@/contexts/CurrentChildContext";
 import { getTaskTemplates } from "@/services/taskTemplateService";
 import { styles } from "@/styles/home.styles";
 import { Child } from "@/types/Child";
 import { useEffect, useState } from "react";
 import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
-
 export default function HomeScreen() {
   const [tasks, setTasks] = useState([
     { id: "1", title: "Reading 20 mins", completed: true },
@@ -16,12 +15,10 @@ export default function HomeScreen() {
   const [newTaskTitle, setNewTaskTitle] = useState("");
   const [showLibrary, setShowLibrary] = useState(false);
   const [showAddTask, setShowAddTask] = useState(false);
-  const [children, setChildren] = useState<Child[]>([]);
-  const [selectedChild, setSelectedChild] = useState<Child | null>(null);
 
   const [taskLibrary, setTaskLibrary] = useState<any[]>([]);
   const [showChildDropdown, setShowChildDropdown] = useState(false);
-
+  const { children, selectedChild, setSelectedChild } = useCurrentChild();
   const toggleTask = (id: string) => {
     setTasks((prevTasks) =>
       prevTasks.map((task) =>
@@ -58,19 +55,6 @@ export default function HomeScreen() {
     setShowLibrary(false);
   };
   useEffect(() => {
-    const loadChildren = async () => {
-      const childrenData = await getChildren();
-
-      setChildren(childrenData as Child[]);
-
-      if (childrenData.length > 0) {
-        setSelectedChild(childrenData[0] as Child);
-      }
-    };
-
-    loadChildren();
-  }, []);
-  useEffect(() => {
     const loadTaskTemplates = async () => {
       if (!selectedChild?.id) return;
 
@@ -93,7 +77,7 @@ export default function HomeScreen() {
       </Pressable>
       {showChildDropdown && (
         <View style={styles.childDropdown}>
-          {children.map((child) => (
+          {children.map((child: Child) => (
             <Pressable
               key={child.id}
               style={styles.childDropdownItem}
